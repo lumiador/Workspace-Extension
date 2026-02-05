@@ -1,0 +1,61 @@
+{
+  "manifest_version": 2,
+  "name": "Firefox Workspaces",
+  "version": "1.0.1",
+  "description": "Create named workspaces that open as dedicated browser windows, auto-save their tab sets, and sync across devices.",
+  "author": "Personal Use",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "workspaces@personal.extension",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": [
+    "tabs",
+    "storage",
+    "menus"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/workspace-indicator.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "background": {
+    "scripts": [
+      "shared/constants.js",
+      "shared/utils.js",
+      "shared/storage.js",
+      "background.js"
+    ],
+    "persistent": true
+  },
+  "browser_action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    },
+    "default_title": "Workspaces",
+    "default_popup": "popup/popup.html"
+  },
+  "sidebar_action": {
+    "default_title": "Workspaces",
+    "default_panel": "sidebar/sidebar.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  }
+}
