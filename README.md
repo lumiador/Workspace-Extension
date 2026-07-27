@@ -1,64 +1,87 @@
-# Firefox Workspaces Extension
+# Window Workspaces
 
-A Firefox extension that mimics Microsoft Edge's Workspaces feature - create named workspaces that open as dedicated browser windows, auto-save their tab sets, and sync across devices.
+A browser extension for Firefox that brings Edge-style workspaces to your browser. Create named workspaces that open as dedicated browser windows, auto-save their tab sets (including native tab groups), and sync across devices via Firefox Sync.
+
+**Version:** 1.0.11 · **Firefox:** 139+ · **Manifest:** V2
 
 ## Features
 
-- **Create Workspaces**: Create from current window or empty
-- **Auto-Save**: Tab changes are automatically saved
-- **Cross-Device Sync**: Uses Firefox Sync (storage.sync)
-- **Move Tabs**: Right-click context menu to move tabs between workspaces
-- **Pin/Archive**: Keep workspaces organized
-- **Dark Theme UI**: Modern, clean popup interface
+- **Create workspaces** — from the current window’s tabs or empty, with a custom name and color
+- **Dedicated windows** — each workspace opens in its own browser window
+- **Auto-save** — tab create, close, move, URL, and tab-group changes are saved automatically (debounced)
+- **Tab groups** — native Firefox tab groups (name, color, collapsed state) are saved and restored with each workspace
+- **Cross-device sync** — workspace metadata and tabs sync through Firefox Sync (`storage.sync`)
+- **Move tabs** — right-click a tab → “Move to Workspace”
+- **Pin workspaces** — keep important workspaces at the top of the list
+- **Sidebar** — manage workspaces from View → Sidebar → Workspaces (handy with vertical tabs)
+- **Window indicators** — toolbar badge and window title preface show the active workspace
+- **Privacy-first** — no external servers, analytics, or third-party accounts
 
-## Installation (Development)
+## Installation
 
-1. Open Firefox and navigate to `about:debugging`
-2. Click **"This Firefox"** in the left sidebar
-3. Click **"Load Temporary Add-on..."**
-4. Navigate to `d:\Workspace Extension\firefox-workspaces\` and select `manifest.json`
+### From the packaged XPI
 
-The extension icon will appear in your toolbar.
+1. Open Firefox and go to `about:addons`
+2. Click the gear icon → **Install Add-on From File…**
+3. Select `workspaces.xpi` from this repository
+
+### Temporary load (development)
+
+1. Open `about:debugging` → **This Firefox**
+2. Click **Load Temporary Add-on…**
+3. Select `manifest.json` in this project root
+
+The Workspaces icon appears in the toolbar.
 
 ## Usage
 
-1. **Create a workspace**: Click the extension icon → "+ New" → enter a name → Create
-2. **Open a workspace**: Click on any workspace in the list
-3. **Auto-save**: When you add/close/move tabs in a workspace window, changes save automatically
-4. **Move tabs**: Right-click any tab → "Move to Workspace" → select destination
-5. **Settings**: Click "Settings" in the popup footer
+1. **Create** — click the extension icon → **+ New** → name (and optional color) → Create
+2. **Open** — click a workspace in the popup or sidebar list
+3. **Auto-save** — work in the workspace window; tab and group changes save automatically
+4. **Move tabs** — right-click any tab → **Move to Workspace** → choose a destination
+5. **Sidebar** — View → Sidebar → Workspaces
+6. **Settings** — open from the popup footer, or the extension’s options page
 
-## Cross-Device Sync
+## Cross-device sync
 
-For sync to work:
 1. Sign in to your Firefox Account
-2. Go to Firefox Settings → Sync
-3. Enable "Add-ons" in sync options
+2. Enable Sync in Firefox Settings
+3. Wait a few minutes for workspace data to appear on other devices
 
-Note: Sync may take a few minutes between devices.
+Workspace names, colors, tabs, and tab-group metadata sync via Mozilla’s Sync service. Window bindings and preferences stay local to each device. See [PRIVACY.md](PRIVACY.md) for details.
 
-## Files
+## Development
+
+```bash
+npm install
+npm run lint    # web-ext lint
+npm run dev     # web-ext run
+npm run build   # produce workspaces.xpi (Windows)
+```
+
+On Windows you can also run `.\build.ps1`, which packs the extension with forward-slash paths suitable for AMO.
+
+## Project layout
 
 ```
-firefox-workspaces/
 ├── manifest.json          # Extension manifest (MV2)
-├── background.js          # Background script
+├── background.js          # Background script (workspaces, listeners, menus)
 ├── shared/
-│   ├── constants.js       # Storage keys, limits
-│   ├── utils.js           # Helper functions
-│   └── storage.js         # Storage layer
-├── popup/
-│   ├── popup.html
-│   ├── popup.css
-│   └── popup.js
-├── options/
-│   ├── options.html
-│   ├── options.css
-│   └── options.js
-└── icons/
-    └── icon-*.png
+│   ├── constants.js       # Storage keys, limits, defaults
+│   ├── utils.js           # Helpers (including tab-group helpers)
+│   └── storage.js         # sync + local storage layer
+├── popup/                 # Toolbar popup UI
+├── sidebar/               # Sidebar panel UI
+├── options/               # Settings page
+├── icons/                 # Extension icons
+├── build.ps1              # XPI packager (PowerShell)
+├── workspaces.xpi         # Packaged extension
+├── PRIVACY.md             # Privacy policy
+└── AMO_LISTING.md         # addons.mozilla.org listing copy
 ```
+
+Permissions used: `tabs`, `tabGroups`, `storage`, `menus`.
 
 ## License
 
-Personal use
+MIT

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspaces Settings</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+
+<body>
+    <div class="options-container">
+        <header class="header">
+            <h1>🗂️ Workspaces Settings</h1>
+        </header>
+
+        <main class="main">
+            <!-- General Settings -->
+            <section class="section">
+                <h2>General</h2>
+
+                <label class="setting">
+                    <span class="setting-info">
+                        <span class="setting-label">Auto-save workspaces</span>
+                        <span class="setting-desc">Automatically save tab changes in workspace windows</span>
+                    </span>
+                    <input type="checkbox" id="auto-save" checked>
+                </label>
+
+                <label class="setting">
+                    <span class="setting-info">
+                        <span class="setting-label">Include pinned tabs</span>
+                        <span class="setting-desc">Save and restore pinned tabs in workspaces</span>
+                    </span>
+                    <input type="checkbox" id="include-pinned" checked>
+                </label>
+
+                <label class="setting">
+                    <span class="setting-info">
+                        <span class="setting-label">Focus existing window</span>
+                        <span class="setting-desc">If a workspace is already open, focus it instead of opening
+                            again</span>
+                    </span>
+                    <input type="checkbox" id="focus-existing" checked>
+                </label>
+
+                <label class="setting">
+                    <span class="setting-info">
+                        <span class="setting-label">Exclude private windows</span>
+                        <span class="setting-desc">Never save or restore tabs from private browsing windows</span>
+                    </span>
+                    <input type="checkbox" id="exclude-private" checked>
+                </label>
+            </section>
+
+            <!-- Sync Info -->
+            <section class="section">
+                <h2>Sync Status</h2>
+
+                <div class="info-card">
+                    <div class="info-row">
+                        <span>Storage used</span>
+                        <span id="storage-used">Calculating...</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Storage limit</span>
+                        <span>~100 KB</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="storage-progress"></div>
+                    </div>
+                </div>
+
+                <div class="help-box">
+                    <h3>📡 Sync Requirements</h3>
+                    <p>For workspaces to sync across devices:</p>
+                    <ol>
+                        <li>Sign in to your Firefox Account</li>
+                        <li>Go to Firefox Settings → Sync</li>
+                        <li>Enable "Add-ons" in sync options</li>
+                    </ol>
+                    <p class="note">Note: Sync may take a few minutes. Workspaces sync with your Firefox Add-ons data.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Data Management -->
+            <section class="section">
+                <h2>Data</h2>
+
+                <div class="button-row">
+                    <button id="btn-export" class="btn btn-secondary">
+                        📤 Export Data
+                    </button>
+                    <button id="btn-import" class="btn btn-secondary">
+                        📥 Import Data
+                    </button>
+                </div>
+
+                <button id="btn-clear" class="btn btn-danger">
+                    🗑️ Clear All Workspace Data
+                </button>
+            </section>
+
+            <!-- About -->
+            <section class="section">
+                <h2>About</h2>
+                <p class="about-text">
+                    Window Workspaces v1.0.11<br>
+                    For personal use
+                </p>
+            </section>
+        </main>
+
+        <input type="file" id="import-file" accept=".json" style="display: none;">
+    </div>
+
+    <script src="../shared/constants.js"></script>
+    <script src="options.js"></script>
+</body>
+
+</html>

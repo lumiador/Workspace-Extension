@@ -1,20 +1,20 @@
-# AMO Listing - Firefox Workspaces
+# AMO Listing - Window Workspaces
 
 Use this content when submitting to addons.mozilla.org
 
 ---
 
 ## Extension Name
-**Firefox Workspaces**
+**Window Workspaces**
 
 ## Summary (250 characters max)
 Create named workspaces that open as dedicated windows. Auto-saves tabs and syncs across devices via Firefox Sync. Perfect for managing multiple projects or clients.
 
 ## Description
 
-### Bring Edge-style Workspaces to Firefox!
+### Bring Edge-style Workspaces to your browser!
 
-Tired of juggling dozens of tabs across different projects? **Firefox Workspaces** lets you organize your browsing into separate, named workspaces—each opening in its own dedicated window.
+Tired of juggling dozens of tabs across different projects? **Window Workspaces** lets you organize your browsing into separate, named workspaces—each opening in its own dedicated window.
 
 ### ✨ Key Features
 
@@ -41,6 +41,11 @@ Tired of juggling dozens of tabs across different projects? **Firefox Workspaces
 **Right-Click Tab Menu**
 - Move any tab to another workspace instantly
 - Works whether the destination workspace is open or closed
+
+**Native Tab Groups**
+- Saves Firefox tab groups with each workspace (name, color, collapsed)
+- Restores groups when you reopen a workspace window
+- Auto-saves when you create, rename, or regroup tabs
 
 ### 🔒 Privacy First
 
@@ -97,7 +102,7 @@ Link to PRIVACY.md hosted somewhere (GitHub, your website, etc.)
 ## Reviewer Notes (for AMO submission form)
 
 This extension:
-- Uses only `tabs`, `storage`, and `menus` permissions
+- Uses only `tabs`, `tabGroups`, `storage`, and `menus` permissions
 - Does not execute remote code
 - Does not collect any user data
 - Syncs only via Firefox's built-in storage.sync API

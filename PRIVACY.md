@@ -1,10 +1,10 @@
-# Privacy Policy - Firefox Workspaces Extension
+# Privacy Policy - Window Workspaces Extension
 
 **Last Updated:** February 2, 2026
 
 ## Summary
 
-Firefox Workspaces does **not** collect, transmit, or share any of your data with external servers. All data stays within your Firefox browser and syncs only through Mozilla's Firefox Sync service.
+Window Workspaces does **not** collect, transmit, or share any of your data with external servers. All data stays within your Firefox browser and syncs only through Mozilla's Firefox Sync service.
 
 ## What Data Is Stored
 
@@ -16,6 +16,7 @@ The extension stores the following data locally in your browser:
 | Tab URLs | Restore tabs when opening a workspace | Firefox Sync (storage.sync) |
 | Tab titles (optional) | Display in workspace list | Firefox Sync (storage.sync) |
 | Pinned tab state | Restore pinned tabs correctly | Firefox Sync (storage.sync) |
+| Tab group metadata | Restore native tab groups (name, color, collapsed) | Firefox Sync (storage.sync) |
 | User preferences | Remember your settings | Local storage (storage.local) |
 
 ## How Data Is Synced
@@ -38,6 +39,7 @@ The extension stores the following data locally in your browser:
 | Permission | Why It's Needed |
 |------------|-----------------|
 | `tabs` | Read tab URLs and titles to save in workspaces |
+| `tabGroups` | Save and restore native Firefox tab groups |
 | `storage` | Save workspace data locally and via Firefox Sync |
 | `menus` | Add "Move to Workspace" context menu on tabs |
 

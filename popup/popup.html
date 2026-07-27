@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workspaces</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <h1>Workspaces</h1>
+      <button id="btn-new" class="btn-new" title="Create new workspace">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        New
+      </button>
+    </header>
+
+    <!-- Create workspace panel (hidden by default) -->
+    <div id="create-panel" class="create-panel hidden">
+      <input type="text" id="input-name" placeholder="Workspace name" autocomplete="off">
+      <div class="emoji-picker" id="emoji-picker" role="listbox" aria-label="Workspace emoji"></div>
+      <div class="color-picker">
+        <button class="color-btn selected" data-color="#3B82F6" style="background: #3B82F6"></button>
+        <button class="color-btn" data-color="#10B981" style="background: #10B981"></button>
+        <button class="color-btn" data-color="#F59E0B" style="background: #F59E0B"></button>
+        <button class="color-btn" data-color="#EF4444" style="background: #EF4444"></button>
+        <button class="color-btn" data-color="#8B5CF6" style="background: #8B5CF6"></button>
+        <button class="color-btn" data-color="#EC4899" style="background: #EC4899"></button>
+        <button class="color-btn" data-color="#06B6D4" style="background: #06B6D4"></button>
+        <button class="color-btn" data-color="#F97316" style="background: #F97316"></button>
+      </div>
+      <div class="create-options">
+        <label>
+          <input type="checkbox" id="from-current" checked>
+          From current window
+        </label>
+      </div>
+      <div class="create-actions">
+        <button id="btn-cancel" class="btn-secondary">Cancel</button>
+        <button id="btn-create" class="btn-primary">Create</button>
+      </div>
+    </div>
+
+    <!-- Workspace list -->
+    <div id="workspace-list" class="workspace-list">
+      <div class="empty-state">
+        <p>No workspaces yet</p>
+        <p class="hint">Click "+ New" to create one</p>
+      </div>
+    </div>
+
+
+
+    <!-- Footer -->
+    <footer class="footer">
+      <a href="#" id="link-settings" class="footer-link">Settings</a>
+      <span id="sync-status" class="sync-status">
+        <span class="sync-dot"></span>
+        Synced
+      </span>
+    </footer>
+  </div>
+
+  <!-- Include shared modules -->
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="popup.js"></script>
+</body>
+
+</html>

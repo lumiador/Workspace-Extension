@@ -10,7 +10,7 @@ let settings = {};
 let saveTimers = {};
 
 // Badge/indicator configuration
-const BADGE_MAX_CHARS = 4;
+// (toolbar badge uses workspace emoji)
 
 /**
  * Initialize the extension
@@ -60,11 +60,19 @@ async function cleanupStaleBindings() {
  */
 function setupTabListeners() {
     browser.tabs.onCreated.addListener(handleTabChange);
-    browser.tabs.onRemoved.addListener(handleTabChange);
+    browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
+        // Window teardown fires tab removals — never auto-save those or the
+        // workspace snapshot gets wiped to [].
+        if (removeInfo && removeInfo.isWindowClosing) {
+            cancelPendingSave(removeInfo.windowId);
+            return;
+        }
+        handleTabChange({ windowId: removeInfo.windowId });
+    });
     browser.tabs.onMoved.addListener(handleTabChange);
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-        // Only trigger on URL changes
-        if (changeInfo.url) {
+        // Trigger on URL or tab-group membership changes
+        if (changeInfo.url || changeInfo.groupId !== undefined) {
             handleTabChange({ windowId: tab.windowId });
         }
     });
@@ -74,6 +82,55 @@ function setupTabListeners() {
     browser.tabs.onDetached.addListener((tabId, detachInfo) => {
         handleTabChange({ windowId: detachInfo.oldWindowId });
     });
+
+    setupTabGroupListeners();
+}
+
+/**
+ * Auto-save when native tab groups change (Firefox 139+)
+ */
+function setupTabGroupListeners() {
+    if (!browser.tabGroups) return;
+
+    const onGroupChange = (group) => {
+        if (group && group.windowId != null) {
+            handleTabChange({ windowId: group.windowId });
+        }
+    };
+
+    if (browser.tabGroups.onCreated) {
+        browser.tabGroups.onCreated.addListener(onGroupChange);
+    }
+    if (browser.tabGroups.onUpdated) {
+        browser.tabGroups.onUpdated.addListener(onGroupChange);
+    }
+    if (browser.tabGroups.onMoved) {
+        browser.tabGroups.onMoved.addListener(onGroupChange);
+    }
+    if (browser.tabGroups.onRemoved) {
+        browser.tabGroups.onRemoved.addListener((group, removeInfo) => {
+            // Closing the window removes groups — skip those saves.
+            if (removeInfo && removeInfo.isWindowClosing) {
+                if (group && group.windowId != null) {
+                    cancelPendingSave(group.windowId);
+                }
+                return;
+            }
+            onGroupChange(group);
+        });
+    }
+}
+
+/**
+ * Cancel a pending debounced save for the workspace bound to a window
+ */
+function cancelPendingSave(windowId) {
+    const workspaceId = windowBindings[windowId] ?? windowBindings[String(windowId)];
+    if (!workspaceId) return;
+    if (saveTimers[workspaceId]) {
+        clearTimeout(saveTimers[workspaceId]);
+        delete saveTimers[workspaceId];
+    }
 }
 
 /**
@@ -82,9 +139,10 @@ function setupTabListeners() {
 function handleTabChange(info) {
     if (!settings.autoSave) return;
 
-    const windowId = info.windowId || info.id;
-    const workspaceId = windowBindings[windowId];
+    const windowId = info.windowId ?? info.id;
+    if (windowId == null) return;
 
+    const workspaceId = windowBindings[windowId] ?? windowBindings[String(windowId)];
     if (!workspaceId) return;
 
     // Debounce saves per workspace
@@ -102,16 +160,45 @@ function handleTabChange(info) {
  */
 async function saveWorkspaceSnapshot(workspaceId, windowId) {
     try {
-        const tabs = await browser.tabs.query({ windowId: parseInt(windowId, 10) });
+        const numericWindowId = parseInt(windowId, 10);
 
-        // Filter and convert tabs
-        const tabDescriptors = tabs
+        // Window was closed / unbound since this save was scheduled
+        const boundId = windowBindings[numericWindowId] ?? windowBindings[String(numericWindowId)];
+        if (boundId !== workspaceId) {
+            console.log('Skipping save; window no longer bound to workspace', workspaceId);
+            return;
+        }
+
+        let tabs;
+        try {
+            tabs = await browser.tabs.query({ windowId: numericWindowId });
+        } catch (error) {
+            // Window no longer exists
+            console.log('Skipping save; window gone', numericWindowId);
+            return;
+        }
+
+        // Filter tabs that will be persisted
+        const savedTabs = tabs
             .filter(tab => !shouldExcludeUrl(tab.url))
-            .filter(tab => settings.includePinnedTabs || !tab.pinned)
-            .map(createTabDescriptor);
+            .filter(tab => settings.includePinnedTabs || !tab.pinned);
 
-        // Check if anything changed
-        const newHash = quickHash(JSON.stringify(tabDescriptors));
+        // Never wipe a populated workspace with an empty snapshot (window
+        // teardown races, or only about: tabs left during close).
+        if (savedTabs.length === 0) {
+            const existing = await Storage.getWorkspaceSnapshot(workspaceId);
+            if (existing.tabs && existing.tabs.length > 0) {
+                console.log('Skipping empty overwrite for workspace', workspaceId);
+                return;
+            }
+        }
+
+        const tabDescriptors = savedTabs.map(createTabDescriptor);
+        const groups = await collectGroupMetadata(savedTabs);
+        const snapshot = { tabs: tabDescriptors, groups };
+
+        // Check if anything changed (tabs + group metadata)
+        const newHash = quickHash(JSON.stringify(snapshot));
         const lastHash = await Storage.getLastHash(workspaceId);
 
         if (newHash === lastHash) {
@@ -123,8 +210,8 @@ async function saveWorkspaceSnapshot(workspaceId, windowId) {
         const currentVersion = await Storage.getWorkspaceVersion(workspaceId);
         const newVersion = currentVersion + 1;
 
-        // Save tabs
-        await Storage.saveWorkspaceTabs(workspaceId, tabDescriptors, newVersion);
+        // Save tabs + group metadata
+        await Storage.saveWorkspaceSnapshot(workspaceId, snapshot, newVersion);
         await Storage.saveLastHash(workspaceId, newHash);
 
         // Update workspace metadata
@@ -135,7 +222,11 @@ async function saveWorkspaceSnapshot(workspaceId, windowId) {
             await Storage.saveWorkspaceIndex(workspaceIndex);
         }
 
-        console.log('Saved workspace:', workspaceId, 'with', tabDescriptors.length, 'tabs');
+        console.log(
+            'Saved workspace:', workspaceId,
+            'with', tabDescriptors.length, 'tabs',
+            'and', Object.keys(groups).length, 'groups'
+        );
     } catch (error) {
         console.error('Failed to save workspace:', error);
     }
@@ -146,9 +237,13 @@ async function saveWorkspaceSnapshot(workspaceId, windowId) {
  */
 function setupWindowListeners() {
     browser.windows.onRemoved.addListener(async (windowId) => {
+        // Cancel any pending save so close-teardown can't wipe tabs
+        cancelPendingSave(windowId);
+
         // Unbind window when closed
-        if (windowBindings[windowId]) {
+        if (windowBindings[windowId] || windowBindings[String(windowId)]) {
             delete windowBindings[windowId];
+            delete windowBindings[String(windowId)];
             await Storage.saveWindowBindings(windowBindings);
             await updateWindowIndicators(windowId);
         }
@@ -298,6 +393,9 @@ async function handleMessage(message) {
         case 'renameWorkspace':
             return await renameWorkspace(message.workspaceId, message.name);
 
+        case 'setWorkspaceEmoji':
+            return await setWorkspaceEmoji(message.workspaceId, message.emoji);
+
         case 'togglePin':
             return await toggleWorkspacePin(message.workspaceId);
 
@@ -324,12 +422,13 @@ async function handleMessage(message) {
  * Create a new workspace
  */
 async function createWorkspace(data) {
-    const { name, color, fromCurrentWindow, windowId } = data;
+    const { name, color, emoji, fromCurrentWindow, windowId } = data;
 
     const workspace = {
         id: generateId(),
         name: name || getDefaultWorkspaceName(workspaceIndex),
         color: color || getRandomColor(),
+        emoji: emoji || getRandomEmoji(),
         pinned: false,
         archived: false,
         createdAt: Date.now(),
@@ -339,14 +438,17 @@ async function createWorkspace(data) {
 
     let tabs = [];
 
+    let groups = {};
+
     if (fromCurrentWindow && windowId) {
         // Capture tabs from current window
         const browserTabs = await browser.tabs.query({ windowId });
-        tabs = browserTabs
+        const savedTabs = browserTabs
             .filter(tab => !shouldExcludeUrl(tab.url))
-            .filter(tab => settings.includePinnedTabs || !tab.pinned)
-            .map(createTabDescriptor);
+            .filter(tab => settings.includePinnedTabs || !tab.pinned);
 
+        tabs = savedTabs.map(createTabDescriptor);
+        groups = await collectGroupMetadata(savedTabs);
         workspace.tabCount = tabs.length;
 
         // Bind window to this workspace
@@ -369,9 +471,7 @@ async function createWorkspace(data) {
     // Save workspace
     workspaceIndex.push(workspace);
     await Storage.saveWorkspaceIndex(workspaceIndex);
-    await Storage.saveWorkspaceTabs(workspace.id, tabs, 1);
-
-    await Storage.saveWorkspaceTabs(workspace.id, tabs, 1);
+    await Storage.saveWorkspaceSnapshot(workspace.id, { tabs, groups }, 1);
 
     updateContextMenu();
 
@@ -401,36 +501,39 @@ async function openWorkspace(workspaceId) {
         }
     }
 
-    // Get tabs for this workspace
-    const tabs = await Storage.getWorkspaceTabs(workspaceId);
-    const urls = tabs.map(t => t.u).filter(url => url && !shouldExcludeUrl(url));
+    // Get tabs + group metadata for this workspace
+    const snapshot = await Storage.getWorkspaceSnapshot(workspaceId);
+    // Keep descriptors aligned with the tabs we actually open
+    let tabsToOpen = snapshot.tabs.filter(t => t.u && !shouldExcludeUrl(t.u));
 
-    if (urls.length === 0) {
-        urls.push('about:newtab');
+    if (tabsToOpen.length === 0) {
+        tabsToOpen = [{ u: 'about:newtab', t: 'New Tab' }];
     }
 
     // Create window with first tab
     const newWindow = await browser.windows.create({
-        url: urls[0],
+        url: tabsToOpen[0].u,
         focused: true
     });
 
     // Add remaining tabs in background
-    for (let i = 1; i < urls.length; i++) {
+    for (let i = 1; i < tabsToOpen.length; i++) {
         await browser.tabs.create({
             windowId: newWindow.id,
-            url: urls[i],
+            url: tabsToOpen[i].u,
             active: false
         });
     }
 
-    // Restore pinned state
+    // Restore pinned state, then tab groups
     const windowTabs = await browser.tabs.query({ windowId: newWindow.id });
-    for (let i = 0; i < Math.min(windowTabs.length, tabs.length); i++) {
-        if (tabs[i].p) {
+    for (let i = 0; i < Math.min(windowTabs.length, tabsToOpen.length); i++) {
+        if (tabsToOpen[i].p) {
             await browser.tabs.update(windowTabs[i].id, { pinned: true });
         }
     }
+
+    await restoreTabGroups(newWindow.id, tabsToOpen, snapshot.groups, windowTabs);
 
     // Bind window
     windowBindings[newWindow.id] = workspaceId;
@@ -442,6 +545,61 @@ async function openWorkspace(workspaceId) {
 
     console.log('Opened workspace:', workspace.name, 'in window', newWindow.id);
     return { windowId: newWindow.id };
+}
+
+/**
+ * Recreate native tab groups from a saved snapshot
+ * @param {number} windowId - Target window
+ * @param {Array} tabDescriptors - Saved tab descriptors (may include .g)
+ * @param {object} groupsMeta - Saved group metadata keyed by old groupId
+ * @param {Array} [windowTabs] - Already-queried tabs in the new window
+ */
+async function restoreTabGroups(windowId, tabDescriptors, groupsMeta = {}, windowTabs = null) {
+    if (!supportsTabGroups()) return;
+
+    const restoredTabs = windowTabs || await browser.tabs.query({ windowId });
+    const count = Math.min(restoredTabs.length, tabDescriptors.length);
+    if (count === 0) return;
+
+    // Preserve order: old groupId -> tab IDs (skip pinned; grouping unpins them)
+    const tabsByGroup = new Map();
+    for (let i = 0; i < count; i++) {
+        const descriptor = tabDescriptors[i];
+        const groupId = descriptor?.g;
+        if (groupId == null || descriptor.p) continue;
+
+        const key = String(groupId);
+        if (!tabsByGroup.has(key)) {
+            tabsByGroup.set(key, []);
+        }
+        tabsByGroup.get(key).push(restoredTabs[i].id);
+    }
+
+    if (tabsByGroup.size === 0) return;
+
+    for (const [oldGroupId, tabIds] of tabsByGroup) {
+        if (tabIds.length === 0) continue;
+
+        try {
+            const newGroupId = await browser.tabs.group({
+                tabIds,
+                createProperties: { windowId }
+            });
+
+            const meta = groupsMeta[oldGroupId] || groupsMeta[String(oldGroupId)];
+            if (meta && supportsTabGroupMetadata()) {
+                const update = {};
+                if (meta.n) update.title = meta.n;
+                if (meta.c) update.color = meta.c;
+                if (meta.x) update.collapsed = true;
+                if (Object.keys(update).length > 0) {
+                    await browser.tabGroups.update(newGroupId, update);
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to restore tab group', oldGroupId, error);
+        }
+    }
 }
 
 /**
@@ -489,6 +647,28 @@ async function renameWorkspace(workspaceId, name) {
     await refreshAllWindowIndicators();
 
     return { success: true };
+}
+
+/**
+ * Set workspace emoji icon
+ */
+async function setWorkspaceEmoji(workspaceId, emoji) {
+    const workspace = workspaceIndex.find(ws => ws.id === workspaceId);
+    if (!workspace) {
+        return { error: 'Workspace not found' };
+    }
+
+    const nextEmoji = (emoji || '').trim();
+    if (!nextEmoji) {
+        return { error: 'Emoji required' };
+    }
+
+    workspace.emoji = nextEmoji;
+    workspace.updatedAt = Date.now();
+    await Storage.saveWorkspaceIndex(workspaceIndex);
+    await refreshAllWindowIndicators();
+
+    return { success: true, emoji: workspace.emoji };
 }
 
 /**
@@ -557,13 +737,13 @@ async function updateWindowIndicators(windowId) {
         if (workspaceId) {
             const workspace = workspaceIndex.find(ws => ws.id === workspaceId);
             if (workspace) {
-                const badgeText = getWorkspaceBadgeText(workspace.name);
+                const badgeText = getWorkspaceEmoji(workspace);
                 // Badge color
                 await browser.browserAction.setBadgeBackgroundColor({
                     color: workspace.color || '#3B82F6',
                     windowId: numericId
                 });
-                // Badge text
+                // Badge text (emoji when possible)
                 await browser.browserAction.setBadgeText({
                     text: badgeText,
                     windowId: numericId
@@ -607,27 +787,6 @@ async function refreshAllWindowIndicators() {
         await updateWindowIndicators(win.id);
     }
 }
-
-/**
- * Create a compact label for the badge from a workspace name
- */
-function getWorkspaceBadgeText(name = '') {
-    const trimmed = name.trim();
-    if (!trimmed) return '';
-
-    const parts = trimmed.split(/\s+/);
-    let label;
-
-    if (parts.length === 1) {
-        label = parts[0].substring(0, BADGE_MAX_CHARS);
-    } else {
-        label = parts.slice(0, 2).map(word => word[0]).join('');
-    }
-
-    return label.toUpperCase().substring(0, BADGE_MAX_CHARS);
-}
-
-
 
 // Initialize on load
 init();
