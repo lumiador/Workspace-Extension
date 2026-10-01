@@ -2,12 +2,13 @@
 
 A browser extension for Firefox that brings Edge-style workspaces to your browser. Create named workspaces that open as dedicated browser windows, auto-save their tab sets (including native tab groups), and sync across devices via Firefox Sync.
 
-**Version:** 1.0.11 · **Firefox:** 139+ · **Manifest:** V2
+**Version:** 1.0.14 · **Firefox:** 139+ · **Manifest:** V2
 
 ## Features
 
 - **Create workspaces** — from the current window’s tabs or empty, with a custom name and color
 - **Dedicated windows** — each workspace opens in its own browser window
+- **Lazy loading** — only the active tab loads when a workspace opens; the rest stay unloaded until clicked, keeping memory low
 - **Auto-save** — tab create, close, move, URL, and tab-group changes are saved automatically (debounced)
 - **Tab groups** — native Firefox tab groups (name, color, collapsed state) are saved and restored with each workspace
 - **Cross-device sync** — workspace metadata and tabs sync through Firefox Sync (`storage.sync`)
@@ -80,7 +81,17 @@ On Windows you can also run `.\build.ps1`, which packs the extension with forwar
 └── AMO_LISTING.md         # addons.mozilla.org listing copy
 ```
 
-Permissions used: `tabs`, `tabGroups`, `storage`, `menus`.
+Permissions used: `tabs`, `tabGroups`, `storage`, `menus`, `downloads`, `alarms`.
+
+## Automatic backup
+
+The extension can automatically export workspace data to a folder inside your **Downloads** directory (e.g. `Downloads/Window-Workspaces-Backups/`). Configure this in **Settings → Automatic Backup**:
+
+- **Daily** or **hourly** scheduled backups
+- **After changes** (debounced ~1 minute after workspace saves)
+- Always keeps `latest.json`, plus dated backup files on scheduled runs
+
+Firefox extensions cannot write to arbitrary folders outside Downloads without a separate native app.
 
 ## License
 

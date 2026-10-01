@@ -28,8 +28,17 @@ async function init() {
 
     await refreshWorkspaces();
 
-    // Auto-refresh when storage changes
-    browser.storage.onChanged.addListener(() => refreshWorkspaces());
+    // Auto-refresh only when the workspace list or window bindings change.
+    // A single auto-save writes several unrelated keys (chunks, version,
+    // hashes, local backup); re-rendering on each of those is wasted work
+    // in every open sidebar.
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        const indexChanged = areaName === 'sync' && changes[STORAGE_KEYS.WORKSPACE_INDEX];
+        const bindingsChanged = areaName === 'local' && changes[LOCAL_KEYS.WINDOW_BINDINGS];
+        if (indexChanged || bindingsChanged) {
+            refreshWorkspaces();
+        }
+    });
 }
 
 function cacheElements() {

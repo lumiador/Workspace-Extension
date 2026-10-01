@@ -84,6 +84,61 @@
                 </div>
             </section>
 
+            <!-- Automatic Backup -->
+            <section class="section">
+                <h2>Automatic Backup</h2>
+
+                <label class="setting">
+                    <span class="setting-info">
+                        <span class="setting-label">Save backups to disk</span>
+                        <span class="setting-desc">Export workspace data automatically to your Downloads folder</span>
+                    </span>
+                    <input type="checkbox" id="auto-backup" checked>
+                </label>
+
+                <label class="setting setting-field">
+                    <span class="setting-info">
+                        <span class="setting-label">Backup frequency</span>
+                        <span class="setting-desc">How often to write backup files</span>
+                    </span>
+                    <select id="backup-interval" class="setting-input">
+                        <option value="on_save">After changes (every ~1 min)</option>
+                        <option value="hourly">Hourly</option>
+                        <option value="daily" selected>Daily</option>
+                    </select>
+                </label>
+
+                <label class="setting setting-field">
+                    <span class="setting-info">
+                        <span class="setting-label">Backup folder</span>
+                        <span class="setting-desc">Subfolder inside Downloads (Windows/Mac)</span>
+                    </span>
+                    <input type="text" id="backup-folder" class="setting-input" value="Window-Workspaces-Backups">
+                </label>
+
+                <div class="info-card">
+                    <div class="info-row">
+                        <span>Last file backup</span>
+                        <span id="last-backup">Never</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Backup location</span>
+                        <span id="backup-location">Downloads/Window-Workspaces-Backups/</span>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button id="btn-backup-now" class="btn btn-secondary">
+                        💾 Backup Now
+                    </button>
+                </div>
+
+                <p class="help-text">
+                    Firefox extensions can only write inside your Downloads folder. Files include
+                    <code>latest.json</code> plus dated backups.
+                </p>
+            </section>
+
             <!-- Data Management -->
             <section class="section">
                 <h2>Data</h2>
@@ -106,7 +161,7 @@
             <section class="section">
                 <h2>About</h2>
                 <p class="about-text">
-                    Window Workspaces v1.0.11<br>
+                    Window Workspaces v1.0.13<br>
                     For personal use
                 </p>
             </section>

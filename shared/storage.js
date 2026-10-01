@@ -108,6 +108,51 @@ const Storage = {
     },
 
     /**
+     * Get a local backup snapshot for a workspace
+     * @param {string} workspaceId
+     * @returns {Promise<{tabs: Array, groups: object, version?: number, savedAt?: number}|null>}
+     */
+    async getLocalBackup(workspaceId) {
+        const result = await browser.storage.local.get(LOCAL_KEYS.SNAPSHOT_BACKUPS);
+        const backups = result[LOCAL_KEYS.SNAPSHOT_BACKUPS] || {};
+        const backup = backups[workspaceId];
+        if (!backup) return null;
+        return this._normalizeSnapshot(backup);
+    },
+
+    /**
+     * Save a local backup snapshot (device-only safety net)
+     * @param {string} workspaceId
+     * @param {{tabs: Array, groups?: object}} snapshot
+     * @param {number} version
+     */
+    async saveLocalBackup(workspaceId, snapshot, version) {
+        if (!snapshot?.tabs?.length) return;
+
+        const result = await browser.storage.local.get(LOCAL_KEYS.SNAPSHOT_BACKUPS);
+        const backups = result[LOCAL_KEYS.SNAPSHOT_BACKUPS] || {};
+        backups[workspaceId] = {
+            tabs: snapshot.tabs,
+            groups: snapshot.groups || {},
+            version,
+            savedAt: Date.now()
+        };
+        await browser.storage.local.set({ [LOCAL_KEYS.SNAPSHOT_BACKUPS]: backups });
+    },
+
+    /**
+     * Remove local backup for a workspace
+     * @param {string} workspaceId
+     */
+    async deleteLocalBackup(workspaceId) {
+        const result = await browser.storage.local.get(LOCAL_KEYS.SNAPSHOT_BACKUPS);
+        const backups = result[LOCAL_KEYS.SNAPSHOT_BACKUPS] || {};
+        if (!backups[workspaceId]) return;
+        delete backups[workspaceId];
+        await browser.storage.local.set({ [LOCAL_KEYS.SNAPSHOT_BACKUPS]: backups });
+    },
+
+    /**
      * Get workspace snapshot (tabs + group metadata), reassembled from chunks
      * @param {string} workspaceId - Workspace ID
      * @returns {Promise<{tabs: Array, groups: object}>}
@@ -123,21 +168,31 @@ const Storage = {
                 return numA - numB;
             });
 
-        if (chunkKeys.length === 0) {
-            return { tabs: [], groups: {} };
+        let snapshot = { tabs: [], groups: {} };
+
+        if (chunkKeys.length > 0) {
+            let jsonStr = '';
+            for (const key of chunkKeys) {
+                jsonStr += allKeys[key];
+            }
+
+            try {
+                snapshot = this._normalizeSnapshot(JSON.parse(jsonStr));
+            } catch (e) {
+                console.error('Failed to parse workspace snapshot:', e);
+            }
         }
 
-        let jsonStr = '';
-        for (const key of chunkKeys) {
-            jsonStr += allKeys[key];
+        // Recover from local backup if sync snapshot was wiped
+        if (!snapshot.tabs.length) {
+            const backup = await this.getLocalBackup(workspaceId);
+            if (backup?.tabs?.length) {
+                console.warn('Recovered workspace from local backup:', workspaceId);
+                return backup;
+            }
         }
 
-        try {
-            return this._normalizeSnapshot(JSON.parse(jsonStr));
-        } catch (e) {
-            console.error('Failed to parse workspace snapshot:', e);
-            return { tabs: [], groups: {} };
-        }
+        return snapshot;
     },
 
     /**
@@ -171,14 +226,10 @@ const Storage = {
 
         const jsonStr = JSON.stringify(payload);
 
-        // Clear old chunks first
         const allKeys = await browser.storage.sync.get(null);
         const oldChunkKeys = Object.keys(allKeys).filter(k =>
             k.startsWith(`ws:${workspaceId}:c:`)
         );
-        if (oldChunkKeys.length > 0) {
-            await browser.storage.sync.remove(oldChunkKeys);
-        }
 
         // Create new chunks
         const chunks = [];
@@ -186,7 +237,9 @@ const Storage = {
             chunks.push(jsonStr.slice(i, i + LIMITS.CHUNK_SIZE));
         }
 
-        // Save chunks and version
+        const newChunkKeys = chunks.map((_, i) => `ws:${workspaceId}:c:${i}`);
+
+        // Write new data first, then remove orphaned chunks (atomic-ish)
         const toSave = {
             [`ws:${workspaceId}:v`]: newVersion
         };
@@ -195,6 +248,15 @@ const Storage = {
         });
 
         await browser.storage.sync.set(toSave);
+
+        const orphanedChunkKeys = oldChunkKeys.filter(k => !newChunkKeys.includes(k));
+        if (orphanedChunkKeys.length > 0) {
+            await browser.storage.sync.remove(orphanedChunkKeys);
+        }
+
+        if (normalized.tabs.length > 0) {
+            await this.saveLocalBackup(workspaceId, normalized, newVersion);
+        }
     },
 
     /**
@@ -219,6 +281,7 @@ const Storage = {
         if (keysToRemove.length > 0) {
             await browser.storage.sync.remove(keysToRemove);
         }
+        await this.deleteLocalBackup(workspaceId);
     },
 
     /**

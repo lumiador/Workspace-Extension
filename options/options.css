@@ -99,6 +99,38 @@ body {
     cursor: pointer;
 }
 
+.setting-field {
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.setting-input {
+    min-width: 180px;
+    max-width: 220px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.setting-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.help-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 12px;
+    line-height: 1.5;
+}
+
+.help-text code {
+    color: var(--text-secondary);
+}
+
 /* Info card */
 .info-card {
     background: var(--bg-card);

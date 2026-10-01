@@ -1,6 +1,6 @@
 {
     "name": "firefox-workspaces",
-    "version": "1.0.11",
+    "version": "1.0.14",
     "description": "Create named workspaces that open as dedicated browser windows, auto-save their tab sets and tab groups, and sync across devices.",
     "scripts": {
         "build": "powershell -Command \"Remove-Item workspaces.xpi -ErrorAction SilentlyContinue; Compress-Archive -Path manifest.json, background.js, shared, popup, options, sidebar, icons, README.md, PRIVACY.md -DestinationPath workspaces.zip -Force; Rename-Item workspaces.zip workspaces.xpi\"",

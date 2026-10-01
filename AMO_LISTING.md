@@ -102,7 +102,7 @@ Link to PRIVACY.md hosted somewhere (GitHub, your website, etc.)
 ## Reviewer Notes (for AMO submission form)
 
 This extension:
-- Uses only `tabs`, `tabGroups`, `storage`, and `menus` permissions
+- Uses only `tabs`, `tabGroups`, `storage`, `menus`, `downloads`, and `alarms` permissions
 - Does not execute remote code
 - Does not collect any user data
 - Syncs only via Firefox's built-in storage.sync API

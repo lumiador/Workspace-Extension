@@ -8,6 +8,8 @@ let workspaceIndex = [];
 let windowBindings = {};
 let settings = {};
 let saveTimers = {};
+const closingWindowIds = new Set();
+const removalBursts = new Map();
 
 // Badge/indicator configuration
 // (toolbar badge uses workspace emoji)
@@ -33,8 +35,22 @@ async function init() {
     setupStorageListener();
     setupContextMenu();
     setupMessageListener();
+    setupBackupListeners();
+    await Backup.scheduleAlarm(settings);
 
     console.log('Firefox Workspaces: Initialized with', workspaceIndex.length, 'workspaces');
+}
+
+/**
+ * Set up automatic file backup alarms
+ */
+function setupBackupListeners() {
+    browser.alarms.onAlarm.addListener((alarm) => {
+        if (alarm.name !== 'auto-backup') return;
+        Backup.runBackup(settings, 'alarm').catch((error) => {
+            console.error('Scheduled file backup failed:', error);
+        });
+    });
 }
 
 /**
@@ -56,26 +72,112 @@ async function cleanupStaleBindings() {
 }
 
 /**
+ * Mark a window as closing so teardown tab events don't overwrite snapshots
+ */
+function markWindowClosing(windowId) {
+    if (windowId == null) return;
+    closingWindowIds.add(windowId);
+    closingWindowIds.add(String(windowId));
+    cancelPendingSave(windowId);
+
+    setTimeout(() => {
+        closingWindowIds.delete(windowId);
+        closingWindowIds.delete(String(windowId));
+        removalBursts.delete(windowId);
+        removalBursts.delete(String(windowId));
+    }, TIMING.CLOSING_WINDOW_MS);
+}
+
+/**
+ * Whether a window is currently being torn down
+ */
+function isWindowClosing(windowId) {
+    return closingWindowIds.has(windowId) || closingWindowIds.has(String(windowId));
+}
+
+/**
+ * Track rapid tab removals (often a window close without isWindowClosing)
+ */
+function trackRemovalBurst(windowId) {
+    const now = Date.now();
+    const key = String(windowId);
+    const burst = removalBursts.get(key) || { count: 0, startedAt: now };
+
+    if (now - burst.startedAt > TIMING.REMOVAL_BURST_MS) {
+        burst.count = 0;
+        burst.startedAt = now;
+    }
+
+    burst.count += 1;
+    removalBursts.set(key, burst);
+
+    if (burst.count >= TIMING.REMOVAL_BURST_COUNT) {
+        markWindowClosing(windowId);
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Set up tab event listeners
  */
 function setupTabListeners() {
     browser.tabs.onCreated.addListener(handleTabChange);
-    browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
-        // Window teardown fires tab removals — never auto-save those or the
-        // workspace snapshot gets wiped to [].
-        if (removeInfo && removeInfo.isWindowClosing) {
-            cancelPendingSave(removeInfo.windowId);
+    browser.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
+        const windowId = removeInfo?.windowId;
+        if (windowId == null) return;
+
+        if (removeInfo.isWindowClosing) {
+            markWindowClosing(windowId);
             return;
         }
-        handleTabChange({ windowId: removeInfo.windowId });
+
+        if (trackRemovalBurst(windowId) || isWindowClosing(windowId)) {
+            return;
+        }
+
+        try {
+            const remaining = await browser.tabs.query({ windowId });
+            if (remaining.length === 0) {
+                markWindowClosing(windowId);
+                return;
+            }
+        } catch (error) {
+            markWindowClosing(windowId);
+            return;
+        }
+
+        if (isWindowClosing(windowId)) return;
+        handleTabChange({ windowId });
     });
     browser.tabs.onMoved.addListener(handleTabChange);
-    browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-        // Trigger on URL or tab-group membership changes
+    // Only URL and tab-group membership changes matter. Ask Firefox to filter
+    // at the source so title/status/favicon updates on every tab don't wake
+    // the background page. Fall back to an unfiltered listener if the
+    // runtime rejects a filter property.
+    const onTabUpdated = (tabId, changeInfo, tab) => {
         if (changeInfo.url || changeInfo.groupId !== undefined) {
             handleTabChange({ windowId: tab.windowId });
         }
-    });
+    };
+    const updateFilters = [
+        { properties: ['url', 'groupId'] },
+        { properties: ['url'] },
+        null
+    ];
+    for (const filter of updateFilters) {
+        try {
+            if (filter) {
+                browser.tabs.onUpdated.addListener(onTabUpdated, filter);
+            } else {
+                browser.tabs.onUpdated.addListener(onTabUpdated);
+            }
+            break;
+        } catch (error) {
+            console.warn('tabs.onUpdated filter rejected, trying fallback:', filter, error);
+        }
+    }
     browser.tabs.onAttached.addListener((tabId, attachInfo) => {
         handleTabChange({ windowId: attachInfo.newWindowId });
     });
@@ -109,10 +211,9 @@ function setupTabGroupListeners() {
     }
     if (browser.tabGroups.onRemoved) {
         browser.tabGroups.onRemoved.addListener((group, removeInfo) => {
-            // Closing the window removes groups — skip those saves.
             if (removeInfo && removeInfo.isWindowClosing) {
                 if (group && group.windowId != null) {
-                    cancelPendingSave(group.windowId);
+                    markWindowClosing(group.windowId);
                 }
                 return;
             }
@@ -162,6 +263,11 @@ async function saveWorkspaceSnapshot(workspaceId, windowId) {
     try {
         const numericWindowId = parseInt(windowId, 10);
 
+        if (isWindowClosing(numericWindowId)) {
+            console.log('Skipping save; window is closing for workspace', workspaceId);
+            return;
+        }
+
         // Window was closed / unbound since this save was scheduled
         const boundId = windowBindings[numericWindowId] ?? windowBindings[String(numericWindowId)];
         if (boundId !== workspaceId) {
@@ -183,11 +289,11 @@ async function saveWorkspaceSnapshot(workspaceId, windowId) {
             .filter(tab => !shouldExcludeUrl(tab.url))
             .filter(tab => settings.includePinnedTabs || !tab.pinned);
 
-        // Never wipe a populated workspace with an empty snapshot (window
-        // teardown races, or only about: tabs left during close).
+        // Never wipe a populated workspace with an empty snapshot. Only read
+        // the stored snapshot when needed; it is a full sync-storage scan.
         if (savedTabs.length === 0) {
             const existing = await Storage.getWorkspaceSnapshot(workspaceId);
-            if (existing.tabs && existing.tabs.length > 0) {
+            if (existing.tabs.length > 0) {
                 console.log('Skipping empty overwrite for workspace', workspaceId);
                 return;
             }
@@ -227,6 +333,8 @@ async function saveWorkspaceSnapshot(workspaceId, windowId) {
             'with', tabDescriptors.length, 'tabs',
             'and', Object.keys(groups).length, 'groups'
         );
+
+        Backup.scheduleOnSaveBackup(settings);
     } catch (error) {
         console.error('Failed to save workspace:', error);
     }
@@ -237,8 +345,7 @@ async function saveWorkspaceSnapshot(workspaceId, windowId) {
  */
 function setupWindowListeners() {
     browser.windows.onRemoved.addListener(async (windowId) => {
-        // Cancel any pending save so close-teardown can't wipe tabs
-        cancelPendingSave(windowId);
+        markWindowClosing(windowId);
 
         // Unbind window when closed
         if (windowBindings[windowId] || windowBindings[String(windowId)]) {
@@ -246,18 +353,6 @@ function setupWindowListeners() {
             delete windowBindings[String(windowId)];
             await Storage.saveWindowBindings(windowBindings);
             await updateWindowIndicators(windowId);
-        }
-    });
-
-    // Notify content scripts when window bindings change
-    browser.storage.onChanged.addListener(async (changes, areaName) => {
-        if (areaName === 'local' && changes[LOCAL_KEYS.WINDOW_BINDINGS]) {
-            // Notify all windows that might have changed
-            const windows = await browser.windows.getAll();
-            for (const win of windows) {
-                await notifyContentScripts(win.id);
-                await updateWindowIndicators(win.id);
-            }
         }
     });
 }
@@ -352,11 +447,12 @@ async function moveTabToWorkspace(tab, targetWorkspaceId) {
             index: -1
         });
     } else {
-        // Add to workspace snapshot
-        const tabs = await Storage.getWorkspaceTabs(targetWorkspaceId);
-        tabs.push(createTabDescriptor(tab));
+        // Add to workspace snapshot (preserve existing group metadata)
+        const snapshot = await Storage.getWorkspaceSnapshot(targetWorkspaceId);
+        snapshot.tabs.push(createTabDescriptor(tab));
         const version = await Storage.getWorkspaceVersion(targetWorkspaceId);
-        await Storage.saveWorkspaceTabs(targetWorkspaceId, tabs, version + 1);
+        await Storage.saveWorkspaceSnapshot(targetWorkspaceId, snapshot, version + 1);
+        Backup.scheduleOnSaveBackup(settings);
 
         // Close the tab from current window
         await browser.tabs.remove(tab.id);
@@ -403,9 +499,16 @@ async function handleMessage(message) {
             return { settings };
 
         case 'saveSettings':
-            settings = message.settings;
+            settings = { ...settings, ...message.settings };
             await Storage.saveSettings(settings);
+            await Backup.scheduleAlarm(settings);
             return { success: true };
+
+        case 'exportBackupNow':
+            return await Backup.runBackup(settings, 'manual');
+
+        case 'getBackupStatus':
+            return await Backup.getStatus();
 
         case 'getStorageUsage':
             return { usage: await Storage.getSyncStorageUsage() };
@@ -454,9 +557,6 @@ async function createWorkspace(data) {
         // Bind window to this workspace
         windowBindings[windowId] = workspace.id;
         await Storage.saveWindowBindings(windowBindings);
-
-        // Notify content scripts in this window
-        notifyContentScripts(windowId);
         await updateWindowIndicators(windowId);
     } else {
         // Create with default tab
@@ -472,6 +572,7 @@ async function createWorkspace(data) {
     workspaceIndex.push(workspace);
     await Storage.saveWorkspaceIndex(workspaceIndex);
     await Storage.saveWorkspaceSnapshot(workspace.id, { tabs, groups }, 1);
+    Backup.scheduleOnSaveBackup(settings);
 
     updateContextMenu();
 
@@ -502,9 +603,19 @@ async function openWorkspace(workspaceId) {
     }
 
     // Get tabs + group metadata for this workspace
-    const snapshot = await Storage.getWorkspaceSnapshot(workspaceId);
+    let snapshot = await Storage.getWorkspaceSnapshot(workspaceId);
     // Keep descriptors aligned with the tabs we actually open
     let tabsToOpen = snapshot.tabs.filter(t => t.u && !shouldExcludeUrl(t.u));
+
+    // If sync was wiped but a local backup exists, restore it to sync now
+    const backup = await Storage.getLocalBackup(workspaceId);
+    if (tabsToOpen.length === 0 && backup?.tabs?.length) {
+        console.warn('Restoring wiped workspace to sync from local backup:', workspaceId);
+        const version = await Storage.getWorkspaceVersion(workspaceId);
+        await Storage.saveWorkspaceSnapshot(workspaceId, backup, version + 1);
+        snapshot = backup;
+        tabsToOpen = snapshot.tabs.filter(t => t.u && !shouldExcludeUrl(t.u));
+    }
 
     if (tabsToOpen.length === 0) {
         tabsToOpen = [{ u: 'about:newtab', t: 'New Tab' }];
@@ -516,13 +627,11 @@ async function openWorkspace(workspaceId) {
         focused: true
     });
 
-    // Add remaining tabs in background
+    // Add remaining tabs as lazy (discarded) tabs so they don't load until
+    // clicked. Loading every tab eagerly spawns a content process per site
+    // and can consume gigabytes for a large workspace.
     for (let i = 1; i < tabsToOpen.length; i++) {
-        await browser.tabs.create({
-            windowId: newWindow.id,
-            url: tabsToOpen[i].u,
-            active: false
-        });
+        await createLazyTab(newWindow.id, tabsToOpen[i]);
     }
 
     // Restore pinned state, then tab groups
@@ -538,13 +647,38 @@ async function openWorkspace(workspaceId) {
     // Bind window
     windowBindings[newWindow.id] = workspaceId;
     await Storage.saveWindowBindings(windowBindings);
-
-    // Notify content scripts in this window
-    notifyContentScripts(newWindow.id);
     await updateWindowIndicators(newWindow.id);
 
     console.log('Opened workspace:', workspace.name, 'in window', newWindow.id);
     return { windowId: newWindow.id };
+}
+
+/**
+ * Create a background tab without loading its content (lazy tab).
+ * Falls back to a normal tab if the runtime rejects the discarded option.
+ * @param {number} windowId
+ * @param {{u: string, t?: string}} descriptor
+ * @returns {Promise<object>} Created tab
+ */
+async function createLazyTab(windowId, descriptor) {
+    const createProps = {
+        windowId,
+        url: descriptor.u,
+        active: false
+    };
+
+    try {
+        const lazyProps = { ...createProps, discarded: true };
+        if (descriptor.t) {
+            // Title is only accepted for discarded tabs; it shows in the
+            // tab strip until the page actually loads.
+            lazyProps.title = descriptor.t;
+        }
+        return await browser.tabs.create(lazyProps);
+    } catch (error) {
+        console.warn('Lazy tab creation failed, loading eagerly:', descriptor.u, error);
+        return await browser.tabs.create(createProps);
+    }
 }
 
 /**
@@ -612,7 +746,6 @@ async function deleteWorkspace(workspaceId) {
     }
 
     workspaceIndex.splice(index, 1);
-    await Storage.saveWorkspaceIndex(workspaceIndex);
     await Storage.saveWorkspaceIndex(workspaceIndex);
     await Storage.deleteWorkspaceData(workspaceId);
 
@@ -706,24 +839,6 @@ async function getCurrentWorkspace(windowId) {
     }
 
     return { workspace };
-}
-
-/**
- * Notify all content scripts in a window about workspace updates
- */
-async function notifyContentScripts(windowId) {
-    try {
-        const tabs = await browser.tabs.query({ windowId: parseInt(windowId, 10) });
-        for (const tab of tabs) {
-            try {
-                await browser.tabs.sendMessage(tab.id, { action: 'workspaceUpdated' });
-            } catch (e) {
-                // Ignore errors (tab might not have content script loaded)
-            }
-        }
-    } catch (e) {
-        // Ignore errors
-    }
 }
 
 /**
