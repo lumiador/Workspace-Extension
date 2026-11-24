@@ -66,6 +66,16 @@ function setupEventListeners() {
         browser.runtime.openOptionsPage();
     });
 
+    const toco = document.getElementById('link-toco');
+    if (toco) {
+        toco.href = tocoSiteUrl();
+        toco.addEventListener('click', (e) => {
+            e.preventDefault();
+            browser.tabs.create({ url: toco.href });
+            window.close();
+        });
+    }
+
     const coffee = document.getElementById('link-coffee');
     if (coffee) {
         coffee.addEventListener('click', (e) => {

@@ -12,6 +12,7 @@ async function init() {
     cacheElements();
     setupEventListeners();
     elements.appVersion.textContent = `v${browser.runtime.getManifest().version}`;
+    document.getElementById('link-toco').href = tocoSiteUrl();
     await loadSettings();
     await updateStorageUsage();
     await updateBackupStatus();

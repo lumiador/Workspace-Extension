@@ -65,6 +65,14 @@ const WORKSPACE_COLORS = [
 // Support link shown in the popup, sidebar and settings page
 const SUPPORT_URL = 'https://buymeacoffee.com/tocomarketing';
 
+// Toco's site, tagged so its analytics can see visits from this extension and browser
+function tocoSiteUrl() {
+  const ua = navigator.userAgent;
+  const browserName = /Firefox\//.test(ua) ? 'firefox' : /Edg\//.test(ua) ? 'edge' : 'chrome';
+  const q = new URLSearchParams({ utm_source: 'workspaces', utm_medium: 'browser-extension', utm_campaign: 'by-toco', utm_content: browserName });
+  return `https://toco.marketing/?${q}`;
+}
+
 // Emoji palette for workspace icons
 const WORKSPACE_EMOJIS = [
   '💼', '🚀', '🏠', '📚', '💻', '🎨', '🔬', '🎮',

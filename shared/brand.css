@@ -178,6 +178,15 @@ select:focus-visible {
   white-space: nowrap;
   overflow: hidden;
 }
+
+a.by {
+  text-decoration: none;
+  transition: color var(--ease);
+}
+a.by:hover {
+  color: var(--yellow);
+  text-decoration: underline;
+}
 .stage button:focus-visible,
 .stage a:focus-visible {
   outline-color: var(--yellow);
