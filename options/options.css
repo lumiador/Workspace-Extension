@@ -1,71 +1,83 @@
-/* Options page styles */
-
-:root {
-    --bg-primary: #1a1a2e;
-    --bg-secondary: #16213e;
-    --bg-card: #1f2937;
-    --bg-hover: #374151;
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
-    --accent: #3b82f6;
-    --accent-hover: #2563eb;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --border: #374151;
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+/* Settings page. Brand tokens and the header base: shared/brand.css. */
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 14px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
     line-height: 1.5;
 }
 
-.options-container {
+/* ---------- Header ---------- */
+.stage {
+    padding: 22px 24px;
+}
+
+.stage-inner {
+    width: 100%;
     max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.tl-name {
+    font-size: 22px;
+}
+
+.by {
+    font-size: 12px;
+}
+
+.stage-title {
+    font: 600 14px/1 var(--font-sans);
+    color: var(--cream);
+    padding: 7px 14px;
+    border-radius: var(--r-pill);
+    box-shadow: inset 0 0 0 1.5px rgba(245, 240, 225, 0.3);
+}
+
+.options-container {
+    max-width: 648px;
     margin: 0 auto;
     padding: 24px;
 }
 
-/* Header */
-.header {
-    margin-bottom: 32px;
-}
-
-.header h1 {
-    font-size: 24px;
-    font-weight: 600;
-}
-
-/* Sections */
+/* ---------- Sections ---------- */
 .section {
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 18px 20px 20px;
+    margin-bottom: 16px;
 }
 
 .section h2 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal-text);
 }
 
-/* Settings */
+.section h2::before {
+    content: "";
+    flex: none;
+    width: 6px;
+    height: 6px;
+    background: var(--yellow);
+    transform: rotate(45deg);
+}
+
+/* ---------- Settings rows ---------- */
 .setting {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     padding: 12px 0;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
@@ -77,118 +89,135 @@ body {
 
 .setting-info {
     flex: 1;
+    min-width: 0;
 }
 
 .setting-label {
     display: block;
-    font-weight: 500;
-    color: var(--text-primary);
+    font-weight: 600;
+    color: var(--text-1);
 }
 
 .setting-desc {
     display: block;
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--text-2);
     margin-top: 2px;
 }
 
 .setting input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: var(--accent);
     cursor: pointer;
 }
 
 .setting-field {
     align-items: flex-start;
-    gap: 12px;
 }
 
 .setting-input {
     min-width: 180px;
     max-width: 220px;
-    padding: 8px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text-primary);
+    padding: 7px 10px;
+    border-radius: var(--r-md);
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-1);
     font-size: 13px;
+    transition: border-color var(--ease);
 }
 
 .setting-input:focus {
     outline: none;
-    border-color: var(--accent);
+    border-color: var(--teal-text);
 }
 
 .help-text {
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--text-2);
     margin-top: 12px;
     line-height: 1.5;
 }
 
 .help-text code {
-    color: var(--text-secondary);
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--muted-bg);
+    color: var(--text-1);
 }
 
-/* Info card */
+/* ---------- Info card ---------- */
 .info-card {
-    background: var(--bg-card);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
+    background: var(--muted-bg);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    margin: 6px 0 14px;
 }
 
 .info-row {
     display: flex;
     justify-content: space-between;
+    gap: 16px;
     margin-bottom: 8px;
     font-size: 13px;
 }
 
-.info-row:last-of-type {
-    margin-bottom: 12px;
+.info-row span:first-child {
+    color: var(--text-2);
+}
+
+.info-row span:last-child {
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
 }
 
 .progress-bar {
     height: 6px;
-    background: var(--bg-primary);
+    margin-top: 12px;
+    background: var(--border);
     border-radius: 3px;
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
-    background: var(--accent);
+    background: var(--teal);
     border-radius: 3px;
     transition: width 0.3s ease;
 }
 
 .progress-fill.warning {
-    background: var(--warning);
+    background: var(--yellow);
 }
 
 .progress-fill.danger {
     background: var(--danger);
 }
 
-/* Help box */
+/* ---------- Help box ---------- */
 .help-box {
-    background: var(--bg-card);
-    border-radius: 8px;
-    padding: 16px;
-    border-left: 3px solid var(--accent);
+    background: var(--teal-dim);
+    border: 1px solid var(--teal-border);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    font-size: 13px;
 }
 
 .help-box h3 {
     font-size: 14px;
-    margin-bottom: 8px;
+    font-weight: 600;
+    margin-bottom: 6px;
 }
 
 .help-box ol {
-    margin: 12px 0;
+    margin: 10px 0;
     padding-left: 20px;
-    color: var(--text-secondary);
+    color: var(--text-1);
 }
 
 .help-box li {
@@ -197,11 +226,10 @@ body {
 
 .help-box .note {
     font-size: 12px;
-    color: var(--text-muted);
-    font-style: italic;
+    color: var(--text-2);
 }
 
-/* Buttons */
+/* ---------- Buttons ---------- */
 .button-row {
     display: flex;
     gap: 12px;
@@ -209,43 +237,86 @@ body {
 }
 
 .btn {
-    padding: 10px 20px;
-    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 20px;
+    border-radius: var(--r-pill);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
+    text-decoration: none;
     cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    border: none;
+    border: 1px solid transparent;
+    transition: background var(--ease), border-color var(--ease), color var(--ease);
 }
 
-.btn:active {
-    transform: scale(0.98);
+.btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.btn-primary {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: var(--on-teal);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--teal-hover);
+    border-color: var(--teal-hover);
 }
 
 .btn-secondary {
     flex: 1;
-    background: var(--bg-card);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-1);
+    border-color: var(--border);
 }
 
 .btn-secondary:hover {
-    background: var(--bg-hover);
+    border-color: var(--teal-border);
+    color: var(--teal-text);
 }
 
 .btn-danger {
     width: 100%;
     background: transparent;
     color: var(--danger);
-    border: 1px solid var(--danger);
+    border-color: var(--danger-border);
 }
 
 .btn-danger:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--danger-bg);
 }
 
-/* About */
+.btn-coffee {
+    flex: none;
+    background: var(--yellow-dim);
+    border-color: var(--yellow-border);
+    color: var(--text-1);
+}
+
+.btn-coffee:hover {
+    background: var(--yellow);
+    border-color: var(--yellow);
+    color: var(--gunmetal);
+}
+
+/* ---------- About ---------- */
+.about-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 16px;
+}
+
 .about-text {
-    color: var(--text-muted);
+    color: var(--text-2);
     font-size: 13px;
+}
+
+.about-text strong {
+    color: var(--text-1);
+    font-weight: 600;
 }

@@ -50,16 +50,20 @@ const DEFAULT_SETTINGS = {
 };
 
 // Color palette for workspace icons
+// (Toco palette. Existing workspaces keep the colour they were saved with.)
 const WORKSPACE_COLORS = [
-  '#3B82F6', // Blue
-  '#10B981', // Green
-  '#F59E0B', // Amber
-  '#EF4444', // Red
-  '#8B5CF6', // Purple
-  '#EC4899', // Pink
-  '#06B6D4', // Cyan
-  '#F97316'  // Orange
+  '#048A81', // Teal
+  '#F5B82E', // Yellow
+  '#FB7185', // Rose
+  '#A78BFA', // Violet
+  '#34D399', // Emerald
+  '#FB923C', // Orange
+  '#60A5FA', // Blue
+  '#22D3EE'  // Cyan
 ];
+
+// Support link shown in the popup, sidebar and settings page
+const SUPPORT_URL = 'https://buymeacoffee.com/tocomarketing';
 
 // Emoji palette for workspace icons
 const WORKSPACE_EMOJIS = [

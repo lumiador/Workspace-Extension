@@ -24,7 +24,7 @@ New-Item -ItemType Directory -Path $tempDir | Out-Null
 
 # Copy specific files/folders to avoid including junk
 $files = @("manifest.json", "background.js", "README.md", "PRIVACY.md")
-$folders = @("shared", "popup", "options", "sidebar", "icons")
+$folders = @("shared", "popup", "options", "sidebar", "icons", "fonts")
 
 foreach ($f in $files) {
     if (Test-Path $f) { Copy-Item $f -Destination $tempDir }

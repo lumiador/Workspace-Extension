@@ -1,0 +1,184 @@
+/* Toco Design System for Window Workspaces: fonts, tokens and the brand header.
+   Loaded first by the popup, sidebar and settings page.
+   Fonts are bundled locally (Anton and Inter, both SIL Open Font License). */
+
+@font-face {
+  font-family: "Anton";
+  src: url("../fonts/anton-latin-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/inter-latin-wght.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- Tokens ---------- */
+:root {
+  /* Brand */
+  --gunmetal: #22333b;
+  --gunmetal-2: #1a2830;
+  --gunmetal-mute: #8a9ba8;
+  --cream: #f5f0e1;
+  --yellow: #f5b82e;
+  --teal: #048a81;
+  --on-teal: #ffffff;
+
+  /* Surfaces and text (light) */
+  --canvas: #fafafa;
+  --surface: #ffffff;
+  --muted-bg: #f3f4f6;
+  --hover: rgba(34, 51, 59, 0.05);
+  --border: #e5e7eb;
+  --border-strong: #7f8a99;
+  --text-1: #111827;
+  --text-2: #6b7280;
+  --text-3: #9ca3af;
+
+  --teal-hover: #037a72;
+  --teal-text: #037a72;
+  --teal-dim: rgba(4, 138, 129, 0.08);
+  --teal-border: rgba(4, 138, 129, 0.3);
+  --yellow-dim: rgba(245, 184, 46, 0.14);
+  --yellow-border: rgba(245, 184, 46, 0.5);
+
+  /* Status */
+  --success: #059669;
+  --warning: #8a5a00;
+  --danger: #b91c1c;
+  --danger-bg: rgba(239, 68, 68, 0.08);
+  --danger-border: rgba(239, 68, 68, 0.45);
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 9999px;
+  --ease: 0.18s ease;
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-brand: "Anton", "Arial Narrow", Impact, sans-serif;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #0e1a20;
+    --surface: #1a2830;
+    --muted-bg: #22333b;
+    --hover: rgba(245, 240, 225, 0.06);
+    --border: #3d535d;
+    --border-strong: #6f8793;
+    --text-1: #eceef2;
+    --text-2: #9fb3bb;
+    --text-3: #8a9ba8;
+
+    --teal-hover: #06a298;
+    --teal-text: #3aafa9;
+    --teal-dim: rgba(58, 175, 169, 0.14);
+    --teal-border: rgba(58, 175, 169, 0.4);
+    --yellow-dim: rgba(245, 184, 46, 0.12);
+    --yellow-border: rgba(245, 184, 46, 0.4);
+
+    --success: #34d399;
+    --warning: #f5b82e;
+    --danger: #f87171;
+    --danger-bg: rgba(248, 113, 113, 0.14);
+    --danger-border: rgba(248, 113, 113, 0.5);
+
+    color-scheme: dark;
+  }
+}
+
+/* ---------- Base ---------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--canvas);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--teal);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--teal-text);
+  outline-offset: 2px;
+}
+
+/* ---------- Stage (dark brand header) ---------- */
+.stage {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--gunmetal);
+  color: var(--cream);
+}
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: -60px;
+  background-image: url("../icons/pattern.svg");
+  background-size: 60px 60px;
+  opacity: 0.1;
+  pointer-events: none;
+}
+.stage > * {
+  position: relative;
+  z-index: 1;
+}
+.tool-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.tool-logo img {
+  display: block;
+  flex: none;
+}
+.tl-name {
+  font: 400 16px/1 var(--font-brand);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--cream);
+}
+.tl-name b {
+  font-weight: 400;
+  color: var(--yellow);
+}
+.by {
+  font: 500 11px/1 var(--font-sans);
+  color: var(--gunmetal-mute);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.stage button:focus-visible,
+.stage a:focus-visible {
+  outline-color: var(--yellow);
+}

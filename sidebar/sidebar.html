@@ -5,16 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workspaces</title>
+    <link rel="stylesheet" href="../shared/brand.css">
+    <link rel="stylesheet" href="../shared/panel.css">
     <link rel="stylesheet" href="sidebar.css">
 </head>
 
 <body>
     <div class="sidebar-container">
         <!-- Header -->
-        <header class="header">
-            <h1>Workspaces</h1>
-            <button id="btn-new" class="btn-new" title="Create new workspace">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <header class="stage">
+            <div class="tool-logo">
+                <img src="../icons/icon.svg" alt="" width="22" height="22">
+                <h1 class="tl-name">Work<b>spaces</b></h1>
+                <span class="by">by Toco</span>
+            </div>
+            <button id="btn-new" class="btn-new" title="Create new workspace" aria-label="Create new workspace">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
             </button>
@@ -24,7 +30,7 @@
         <div id="current-workspace-indicator" class="current-workspace-indicator hidden">
             <div class="current-ws-icon"></div>
             <div class="current-ws-info">
-                <div class="current-ws-label">Current Workspace</div>
+                <div class="current-ws-label">Current workspace</div>
                 <div class="current-ws-name"></div>
             </div>
         </div>
@@ -34,14 +40,14 @@
             <input type="text" id="input-name" placeholder="Workspace name" autocomplete="off">
             <div class="emoji-picker" id="emoji-picker" role="listbox" aria-label="Workspace emoji"></div>
             <div class="color-picker">
-                <button class="color-btn selected" data-color="#3B82F6" style="background: #3B82F6"></button>
-                <button class="color-btn" data-color="#10B981" style="background: #10B981"></button>
-                <button class="color-btn" data-color="#F59E0B" style="background: #F59E0B"></button>
-                <button class="color-btn" data-color="#EF4444" style="background: #EF4444"></button>
-                <button class="color-btn" data-color="#8B5CF6" style="background: #8B5CF6"></button>
-                <button class="color-btn" data-color="#EC4899" style="background: #EC4899"></button>
-                <button class="color-btn" data-color="#06B6D4" style="background: #06B6D4"></button>
-                <button class="color-btn" data-color="#F97316" style="background: #F97316"></button>
+                <button class="color-btn selected" data-color="#048A81" style="background: #048A81" title="Teal"></button>
+                <button class="color-btn" data-color="#F5B82E" style="background: #F5B82E" title="Yellow"></button>
+                <button class="color-btn" data-color="#FB7185" style="background: #FB7185" title="Rose"></button>
+                <button class="color-btn" data-color="#A78BFA" style="background: #A78BFA" title="Violet"></button>
+                <button class="color-btn" data-color="#34D399" style="background: #34D399" title="Emerald"></button>
+                <button class="color-btn" data-color="#FB923C" style="background: #FB923C" title="Orange"></button>
+                <button class="color-btn" data-color="#60A5FA" style="background: #60A5FA" title="Blue"></button>
+                <button class="color-btn" data-color="#22D3EE" style="background: #22D3EE" title="Cyan"></button>
             </div>
             <div class="create-options">
                 <label>
@@ -65,7 +71,9 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <a href="#" id="link-settings" class="footer-link">⚙️ Settings</a>
+            <a href="#" id="link-settings" class="footer-link">Settings</a>
+            <a href="https://buymeacoffee.com/tocomarketing" id="link-coffee" class="footer-link" target="_blank"
+                rel="noopener noreferrer">☕ Buy me a coffee</a>
         </footer>
     </div>
 

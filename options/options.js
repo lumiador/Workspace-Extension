@@ -11,6 +11,7 @@ const elements = {};
 async function init() {
     cacheElements();
     setupEventListeners();
+    elements.appVersion.textContent = `v${browser.runtime.getManifest().version}`;
     await loadSettings();
     await updateStorageUsage();
     await updateBackupStatus();
@@ -36,6 +37,7 @@ function cacheElements() {
     elements.btnBackupNow = document.getElementById('btn-backup-now');
     elements.btnClear = document.getElementById('btn-clear');
     elements.importFile = document.getElementById('import-file');
+    elements.appVersion = document.getElementById('app-version');
 }
 
 /**
@@ -157,11 +159,11 @@ async function backupNow() {
         await updateBackupStatus();
         elements.btnBackupNow.textContent = 'Backup saved';
         setTimeout(() => {
-            elements.btnBackupNow.textContent = '💾 Backup Now';
+            elements.btnBackupNow.textContent = 'Back up now';
             elements.btnBackupNow.disabled = false;
         }, 2000);
     } catch (error) {
-        elements.btnBackupNow.textContent = '💾 Backup Now';
+        elements.btnBackupNow.textContent = 'Back up now';
         elements.btnBackupNow.disabled = false;
         alert('Backup failed: ' + error.message);
     }

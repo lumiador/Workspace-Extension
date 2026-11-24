@@ -6,7 +6,7 @@
 // State
 let workspaces = [];
 let windowBindings = {};
-let selectedColor = '#3B82F6';
+let selectedColor = WORKSPACE_COLORS[0];
 let selectedEmoji = WORKSPACE_EMOJIS[0];
 let currentWindowId = null;
 
@@ -65,6 +65,15 @@ function setupEventListeners() {
         e.preventDefault();
         browser.runtime.openOptionsPage();
     });
+
+    const coffee = document.getElementById('link-coffee');
+    if (coffee) {
+        coffee.addEventListener('click', (e) => {
+            e.preventDefault();
+            browser.tabs.create({ url: SUPPORT_URL });
+            window.close();
+        });
+    }
 }
 
 /**
@@ -191,7 +200,8 @@ function renderWorkspaces() {
         if (ws.pinned) {
             const pin = document.createElement('span');
             pin.className = 'pinned-icon';
-            pin.textContent = ' 📌';
+            pin.title = 'Pinned';
+            pin.appendChild(uiIcon('pin'));
             nameDiv.appendChild(pin);
         }
         info.appendChild(nameDiv);
@@ -212,9 +222,9 @@ function renderWorkspaces() {
         const actions = document.createElement('div');
         actions.className = 'ws-actions';
 
-        const renameBtn = createBtn('✏️', 'Rename', 'rename');
-        const pinBtn = createBtn(ws.pinned ? '📍' : '📌', ws.pinned ? 'Unpin' : 'Pin', 'pin');
-        const deleteBtn = createBtn('🗑️', 'Delete', 'delete', true);
+        const renameBtn = createBtn('edit', 'Rename', 'rename');
+        const pinBtn = createBtn('pin', ws.pinned ? 'Unpin' : 'Pin', 'pin', false, ws.pinned);
+        const deleteBtn = createBtn('trash', 'Delete', 'delete', true);
 
         actions.appendChild(renameBtn);
         actions.appendChild(pinBtn);
@@ -263,12 +273,13 @@ function toggleInlineEmojiPicker(card, workspace) {
     card.appendChild(picker);
 }
 
-function createBtn(icon, title, action, isDanger = false) {
+function createBtn(icon, title, action, isDanger = false, isOn = false) {
     const btn = document.createElement('button');
-    btn.className = `ws-action-btn ${isDanger ? 'danger' : ''}`;
+    btn.className = `ws-action-btn${isDanger ? ' danger' : ''}${isOn ? ' on' : ''}`;
     btn.dataset.action = action;
     btn.title = title;
-    btn.textContent = icon;
+    btn.setAttribute('aria-label', title);
+    btn.appendChild(uiIcon(icon));
     return btn;
 }
 

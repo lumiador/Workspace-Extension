@@ -2,7 +2,7 @@
 
 A browser extension for Firefox that brings Edge-style workspaces to your browser. Create named workspaces that open as dedicated browser windows, auto-save their tab sets (including native tab groups), and sync across devices via Firefox Sync.
 
-**Version:** 1.0.14 · **Firefox:** 139+ · **Manifest:** V2
+**Version:** 1.0.15 · **Firefox:** 139+ · **Manifest:** V2
 
 ## Features
 
@@ -70,11 +70,14 @@ On Windows you can also run `.\build.ps1`, which packs the extension with forwar
 ├── shared/
 │   ├── constants.js       # Storage keys, limits, defaults
 │   ├── utils.js           # Helpers (including tab-group helpers)
-│   └── storage.js         # sync + local storage layer
+│   ├── storage.js         # sync + local storage layer
+│   ├── brand.css          # Toco design tokens, fonts and the brand header
+│   └── panel.css          # Workspace list styles shared by popup and sidebar
 ├── popup/                 # Toolbar popup UI
 ├── sidebar/               # Sidebar panel UI
 ├── options/               # Settings page
 ├── icons/                 # Extension icons
+├── fonts/                 # Bundled Inter and Anton (SIL Open Font License)
 ├── build.ps1              # XPI packager (PowerShell)
 ├── workspaces.xpi         # Packaged extension
 ├── PRIVACY.md             # Privacy policy

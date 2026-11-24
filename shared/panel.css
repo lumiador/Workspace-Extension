@@ -1,0 +1,349 @@
+/* Workspace list UI shared by the popup and the sidebar.
+   Sizes come from the --ws-* variables each page sets in its own stylesheet. */
+
+/* ---------- Header ---------- */
+.stage {
+  padding: var(--ws-pad-y) var(--ws-pad-x);
+}
+
+.btn-new {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--teal);
+  color: var(--on-teal);
+  border: none;
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--ease);
+}
+.btn-new:hover {
+  background: var(--teal-hover);
+}
+
+/* ---------- Create panel ---------- */
+.create-panel {
+  flex-shrink: 0;
+  padding: var(--ws-pad-x);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.create-panel.hidden {
+  display: none;
+}
+
+.create-panel input[type="text"],
+.ws-rename-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--r-md);
+  color: var(--text-1);
+  font-size: var(--ws-font);
+  transition: border-color var(--ease);
+}
+.create-panel input[type="text"] {
+  padding: 8px 11px;
+  margin-bottom: 10px;
+}
+.create-panel input[type="text"]::placeholder {
+  color: var(--text-3);
+}
+.create-panel input[type="text"]:focus,
+.ws-rename-input:focus {
+  outline: none;
+  border-color: var(--teal-text);
+}
+
+.emoji-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+  max-height: 72px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.emoji-btn {
+  width: var(--ws-emoji);
+  height: var(--ws-emoji);
+  border: 2px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--muted-bg);
+  cursor: pointer;
+  font-size: calc(var(--ws-emoji) * 0.56);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform var(--ease), border-color var(--ease);
+}
+.emoji-btn:hover {
+  transform: scale(1.1);
+}
+.emoji-btn.selected {
+  border-color: var(--teal);
+  background: var(--teal-dim);
+}
+
+.color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 2px;
+}
+.color-btn {
+  width: var(--ws-swatch);
+  height: var(--ws-swatch);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform var(--ease), box-shadow var(--ease);
+}
+.color-btn:hover {
+  transform: scale(1.1);
+}
+.color-btn.selected {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text-1);
+}
+
+.create-options {
+  margin-bottom: 12px;
+}
+.create-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: var(--ws-font-sm);
+  cursor: pointer;
+}
+
+.create-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.btn-primary,
+.btn-secondary {
+  padding: 6px 16px;
+  border-radius: var(--r-pill);
+  font-size: var(--ws-font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--ease), border-color var(--ease), color var(--ease);
+}
+.btn-primary {
+  background: var(--teal);
+  color: var(--on-teal);
+  border: 1px solid var(--teal);
+}
+.btn-primary:hover {
+  background: var(--teal-hover);
+  border-color: var(--teal-hover);
+}
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  border-color: var(--teal-border);
+  color: var(--teal-text);
+}
+
+/* ---------- Workspace list ---------- */
+.workspace-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 36px 20px;
+  color: var(--text-2);
+}
+.empty-state p {
+  margin-bottom: 6px;
+}
+.empty-state .hint {
+  font-size: var(--ws-font-sm);
+  color: var(--text-3);
+}
+
+.workspace-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: var(--ws-card-pad);
+  margin-bottom: var(--ws-card-gap);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color var(--ease), background var(--ease);
+}
+.workspace-card:hover {
+  border-color: var(--teal-border);
+}
+.workspace-card.archived {
+  opacity: 0.6;
+}
+/* The workspace this window belongs to */
+.workspace-card.active {
+  border-color: var(--teal-border);
+  background: linear-gradient(var(--teal-dim), var(--teal-dim)), var(--surface);
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+
+.ws-icon {
+  width: var(--ws-icon);
+  height: var(--ws-icon);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  font-size: calc(var(--ws-icon) * 0.52);
+  line-height: 1;
+  color: white;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ws-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.ws-name {
+  font-size: var(--ws-font);
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ws-name .pinned-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--yellow);
+}
+.ws-name .pinned-icon svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+.ws-meta {
+  margin-top: 1px;
+  font-size: var(--ws-font-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ws-actions {
+  display: none;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.workspace-card:hover .ws-actions,
+.workspace-card:focus-within .ws-actions {
+  display: flex;
+}
+.ws-action-btn {
+  width: var(--ws-action);
+  height: var(--ws-action);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background var(--ease), color var(--ease);
+}
+.ws-action-btn svg {
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.ws-action-btn:hover {
+  background: var(--muted-bg);
+  color: var(--text-1);
+}
+.ws-action-btn.on {
+  color: var(--yellow);
+}
+.ws-action-btn.on svg {
+  fill: currentColor;
+}
+.ws-action-btn.danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.emoji-picker-inline {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 8px;
+  margin-bottom: 0;
+  max-height: 80px;
+}
+
+.ws-rename-input {
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  font-weight: 500;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px var(--ws-pad-x);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+.footer-link {
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: var(--ws-font-sm);
+  font-weight: 500;
+  transition: color var(--ease);
+}
+.footer-link:hover {
+  color: var(--teal-text);
+  text-decoration: underline;
+}
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ws-font-xs);
+  color: var(--text-2);
+}
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--success);
+  border-radius: 50%;
+}

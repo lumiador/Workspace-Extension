@@ -213,7 +213,39 @@ function getWorkspaceEmoji(workspace = {}) {
  */
 function applyWorkspaceIcon(el, workspace) {
     if (!el) return;
-    el.style.backgroundColor = workspace.color || '#3B82F6';
+    el.style.backgroundColor = workspace.color || WORKSPACE_COLORS[0];
     el.textContent = getWorkspaceEmoji(workspace);
     el.title = 'Change emoji';
+}
+
+/**
+ * Line icons for the workspace action buttons (24x24, drawn with currentColor)
+ */
+const UI_ICON_PATHS = {
+    edit: ['M4 20h4L19 9l-4-4L4 16z', 'M13.5 6.5l4 4'],
+    pin: ['M9 3h6l-1 6 3 3v2H7v-2l3-3z', 'M12 14v7'],
+    trash: ['M4 7h16', 'M9 7V4h6v3', 'M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12', 'M10 11v6', 'M14 11v6']
+};
+
+/**
+ * Build an inline SVG icon without innerHTML
+ * @param {string} name - Key of UI_ICON_PATHS
+ * @returns {SVGElement}
+ */
+function uiIcon(name) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.75');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    (UI_ICON_PATHS[name] || []).forEach(d => {
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', d);
+        svg.appendChild(path);
+    });
+    return svg;
 }
